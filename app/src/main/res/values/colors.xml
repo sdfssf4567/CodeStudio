@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- VSCode Dark+ palette -->
+    <color name="editor_bg">#1E1E1E</color>
+    <color name="panel">#252526</color>
+    <color name="tab_inactive">#2D2D2D</color>
+    <color name="accent">#007ACC</color>
+    <color name="text_main">#CCCCCC</color>
+    <color name="text_dim">#858585</color>
+    <color name="line">#3C3C3C</color>
+    <color name="dim_scrim">#99000000</color>
+    <!-- syntax accents for file icons -->
+    <color name="html_orange">#E44D26</color>
+    <color name="css_blue">#264DE4</color>
+    <color name="js_yellow">#F0DB4F</color>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/editor_bg</item>
+        <item name="android:statusBarColor">@color/panel</item>
+        <item name="android:navigationBarColor">@color/editor_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:colorPrimary">@color/accent</item>
+        <item name="android:colorPrimaryDark">@color/panel</item>
+        <item name="android:colorButtonNormal">@color/tab_inactive</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+</resources>

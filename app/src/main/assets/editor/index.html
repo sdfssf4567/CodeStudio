@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fa" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>CodeStudio Editor</title>
+<style>
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('JetBrainsMono-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('JetBrainsMono-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #1e1e1e;
+    overflow: hidden;
+  }
+  #editor { height: 100%; }
+  .cm-editor { height: 100%; }
+</style>
+</head>
+<body>
+<div id="editor"></div>
+<script src="editor.bundle.js"></script>
+</body>
+</html>

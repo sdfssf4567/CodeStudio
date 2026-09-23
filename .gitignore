@@ -1,0 +1,12 @@
+# Built application files
+build/
+app/build/
+.gradle/
+local.properties
+*.iml
+.idea/
+captures/
+.DS_Store
+# Keystore is machine-local (generate your own, see README)
+app/codestudio.keystore
+*.jks
