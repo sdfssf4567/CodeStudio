@@ -290,9 +290,17 @@
         android:elevation="8dp"
         android:orientation="vertical">
 
-        <LinearLayout
+        <!-- دستگیره: برای بستن، به پایین بکشید -->
+        <View
+            android:id="@+id/previewHandle"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="24dp"
+            android:background="@drawable/preview_handle" />
+
+        <LinearLayout
+            android:id="@+id/previewHeader"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
             android:background="@color/panel"
             android:gravity="center_vertical"
             android:orientation="horizontal">
@@ -321,10 +329,22 @@
                 android:textSize="12sp" />
 
             <ImageButton
-                android:id="@+id/btnReloadPreview"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:id="@+id/btnExpandPreview"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_marginStart="4dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="toggle fullscreen preview"
+                android:padding="9dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_expand"
+                android:tint="@color/text_main" />
+
+            <ImageButton
+                android:id="@+id/btnReloadPreview"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="2dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:contentDescription="reload preview"
                 android:padding="9dp"
@@ -334,15 +354,15 @@
 
             <ImageButton
                 android:id="@+id/btnClosePreview"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:layout_marginEnd="6dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:contentDescription="close preview"
-                android:padding="9dp"
+                android:padding="8dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_close"
-                android:tint="@color/text_main" />
+                android:tint="#E0E0E0" />
         </LinearLayout>
 
         <View

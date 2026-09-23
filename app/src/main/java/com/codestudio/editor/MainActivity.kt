@@ -9,6 +9,7 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.TextUtils
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebSettings
@@ -31,6 +32,11 @@ class MainActivity : Activity() {
 
     companion object {
         const val WELCOME_PATH = "@welcome"
+        val WELCOME_TEXT = "// به CodeStudio خوش آمدید!\n" +
+            "// فایلی را از منوی کناری باز کنید یا از منوی بالا پروژه جدید بسازید.\n" +
+            "// در فایل HTML علامت ! را تایپ کنید تا قالب HTML5 ساخته شود.\n" +
+            "// تایپ هر حرف (مثل h) لیست تگ‌ها را پیشنهاد می‌دهد.\n" +
+            "// این تب با دکمه ✕ بسته می‌شود."
         val SHORTCUTS = listOf("<", ">", "/", ":", ";", "{", "}", "(", ")", "\"", "'", "=", "\$", "Tab")
         const val ACCENT = "#007acc"
         const val TEXT_MAIN = "#cccccc"
@@ -73,6 +79,8 @@ class MainActivity : Activity() {
     private var previewOpen = false
     private var drawerOpen = false
     private var previewLoadedPath: String? = null
+    private var previewFullscreen = false
+    private var previewBaseHeight = 0
 
     private val prefs by lazy { getSharedPreferences("codestudio", MODE_PRIVATE) }
 
@@ -109,12 +117,8 @@ class MainActivity : Activity() {
         }
         previewPanel.post {
             val h = (window.decorView.height * 0.78f).toInt()
-            val lp = FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, h
-            )
-            lp.gravity = Gravity.BOTTOM
-            previewPanel.layoutParams = lp
-            previewPanel.translationY = h.toFloat()
+            previewBaseHeight = h
+            applyPreviewHeight(false)
         }
     }
 
@@ -258,11 +262,61 @@ class MainActivity : Activity() {
         }
         findViewById<ImageButton>(R.id.btnReloadPreview).setOnClickListener { reloadPreview() }
         findViewById<ImageButton>(R.id.btnClosePreview).setOnClickListener { showPreview(false) }
+        findViewById<ImageButton>(R.id.btnExpandPreview).setOnClickListener {
+            applyPreviewHeight(!previewFullscreen)
+        }
+        setupSwipeToClose(findViewById(R.id.previewHandle))
         dimView.setOnClickListener {
             if (drawerOpen) setDrawer(false)
             if (previewOpen) showPreview(false)
         }
         updateBootstrapBtn()
+    }
+
+    /** ارتفاع پنل پیش‌نمایش: ۷۸٪ صفحه یا تمام‌صفحه */
+    private fun applyPreviewHeight(fullscreen: Boolean) {
+        previewFullscreen = fullscreen
+        val lp = previewPanel.layoutParams as FrameLayout.LayoutParams
+        lp.height = if (fullscreen) ViewGroup.LayoutParams.MATCH_PARENT else previewBaseHeight
+        previewPanel.layoutParams = lp
+        findViewById<ImageButton>(R.id.btnExpandPreview)
+            .setImageResource(if (fullscreen) R.drawable.ic_collapse else R.drawable.ic_expand)
+    }
+
+    /** کشیدن دستگیره به پایین → بستن پیش‌نمایش */
+    private fun setupSwipeToClose(handle: View) {
+        var downY = 0f
+        var tracking = false
+        handle.setOnTouchListener { _, ev ->
+            if (!previewOpen) return@setOnTouchListener false
+            when (ev.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downY = ev.rawY
+                    tracking = true
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (tracking) {
+                        val dy = ev.rawY - downY
+                        if (dy > 0) previewPanel.translationY = dy
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (tracking) {
+                        tracking = false
+                        val dy = ev.rawY - downY
+                        if (dy > previewPanel.height * 0.16f) {
+                            showPreview(false)
+                        } else {
+                            previewPanel.animate().translationY(0f).setDuration(180).start()
+                        }
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
     }
 
     // =========================================================
@@ -354,13 +408,14 @@ class MainActivity : Activity() {
                 parent.smoothScrollTo(maxOf(0, v.left - 220), 0)
             }
         }
-        val content = FileManager.readText(File(path))
-        val lang = FileManager.languageFor(path)
-        tvFileName.text = File(path).name
-        tvFileType.text = FileManager.languageLabel(path)
+        val isWelcome = path == WELCOME_PATH
+        val content = if (isWelcome) WELCOME_TEXT else FileManager.readText(File(path))
+        val lang = if (isWelcome) "text" else FileManager.languageFor(path)
+        tvFileName.text = if (isWelcome) "CodeStudio" else File(path).name
+        tvFileType.text = if (isWelcome) "راهنما" else FileManager.languageLabel(path)
         js(
             "window.Host.openFile(" + JSONObject.quote(path) + "," +
-                JSONObject.quote(File(path).name) + "," +
+                JSONObject.quote(if (isWelcome) "welcome" else File(path).name) + "," +
                 JSONObject.quote(content) + "," +
                 JSONObject.quote(lang) + ")"
         )
@@ -379,7 +434,7 @@ class MainActivity : Activity() {
         if (activePath == path) {
             activePath = null
             val next = tabs.getOrNull(minOf(idx, tabs.size - 1))
-            if (next != null) activateTab(next.path) else showWelcome()
+            if (next != null) activateTab(next.path) else showEmptyState()
         }
         updateSaveIcon()
     }
@@ -401,16 +456,29 @@ class MainActivity : Activity() {
     }
 
     private fun showWelcome() {
-        activePath = WELCOME_PATH
+        // تب خوش‌آمدگویی واقعی و قابل بستن
+        if (tabs.none { it.path == WELCOME_PATH }) {
+            val info = TabInfo(WELCOME_PATH, "welcome")
+            tabs.add(info)
+            val v = buildTabView(info)
+            tabContainer.addView(v)
+            tabViews[WELCOME_PATH] = v
+            tabLabels[WELCOME_PATH] = v.findViewWithTag("label") as TextView
+        }
+        activateTab(WELCOME_PATH)
+    }
+
+    private fun showEmptyState() {
+        activePath = "@empty"
         tvFileName.text = "CodeStudio"
         tvFileType.text = "—"
-        val welcome = "// به CodeStudio خوش آمدید!\n" +
-            "// فایلی را از منوی کناری باز کنید یا از منوی بالا پروژه جدید بسازید.\n" +
-            "// در فایل HTML علامت ! را تایپ کنید تا قالب HTML5 ساخته شود."
+        val t = "// فایلی باز نیست.\n" +
+            "// برای شروع، از منوی کناری (☰) یک فایل باز کنید\n" +
+            "// یا دکمه + را بزنید تا فایل جدید بسازید."
         js(
-            "window.Host.openFile(" + JSONObject.quote(WELCOME_PATH) + "," +
-                JSONObject.quote("welcome") + "," +
-                JSONObject.quote(welcome) + "," +
+            "window.Host.openFile(" + JSONObject.quote("@empty") + "," +
+                JSONObject.quote("empty") + "," +
+                JSONObject.quote(t) + "," +
                 JSONObject.quote("text") + ")"
         )
     }
@@ -804,12 +872,14 @@ class MainActivity : Activity() {
 
     private fun showAbout() {
         AlertDialog.Builder(this)
-            .setTitle("CodeStudio v1.0.0")
+            .setTitle("CodeStudio v1.1.0")
             .setMessage(
                 "ویرایشگر کد وب برای اندروید\n\n" +
                     "• هسته ادیتور: CodeMirror 6 (آفلاین)\n" +
                     "• HTML / CSS / JavaScript / Bootstrap 5\n" +
-                    "• پیش‌نمایش زنده با لینک خودکار فایل‌ها\n\n" +
+                    "• پیشنهاد خودکار کامل: تگ‌های HTML، اتریبیوت‌ها، کلاس‌های بوت‌استرپ، کدهای JS\n" +
+                    "• پیش‌نمایش زنده با لینک خودکار فایل‌ها\n" +
+                    "• بستن پیش‌نمایش: کشیدن به پایین، دکمه ✕، تمام‌صفحه\n\n" +
                     "ساخته‌شده با Kotlin و WebView"
             )
             .setPositiveButton("باشه", null)
